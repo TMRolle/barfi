@@ -86,6 +86,7 @@
 <script>
 import { Streamlit } from "streamlit-component-lib";
 import { Editor } from "@baklavajs/core";
+import { InterfaceTypePlugin } from "@baklavajs/plugin-interface-types";
 import { ViewPlugin } from "@baklavajs/plugin-renderer-vue";
 import { OptionPlugin } from "@baklavajs/plugin-options-vue";
 import { Engine } from "@baklavajs/plugin-engine";
@@ -101,6 +102,7 @@ export default {
             editor: new Editor(),
             viewPlugin: new ViewPlugin(),
             engine: new Engine(true),
+            intfTypePlugin: new InterfaceTypePlugin(),
             menuModal: false,
             listTab: true,
             saveTab: false,
@@ -120,11 +122,23 @@ export default {
         // The engine plugin computes the nodes in the graph in the
         // correct order using the "compute" methods of the nodes
         this.editor.use(this.engine);
+        // Interface type plugin
+        this.editor.use(this.intfTypePlugin);
 
         // Show a minimap in the top right corner
         this.viewPlugin.enableMinimap = true;
 
         console.log(this.args);
+        // Read the infos on the types passed in from Streamlit
+        // and register them.
+        this.args.interface_types.forEach((el) => {
+            this.intfTypePlugin.addType(el.name, el.color);
+            el.compatible.forEach((tc) => {
+                // Type conversions must be handled in Python
+                this.intfTypePlugin.addConversion(el.name, tc);
+            };
+        });
+        
         // Read the infos on the node passed in from Streamlit
         // and register them.
         this.args.base_blocks.forEach((el) => {
@@ -147,6 +161,7 @@ export default {
             // this.editor.registerNodeType(el.name, Block);
             this.BlockNameID[el.name] = 1;
         });
+
 
         // Load the editor data if load_editor_schema not equal to null.
         if (this.args.load_editor_schema) {
